@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ardra Dental Clinic - Billing System</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Printer, Plus, Trash2, Calendar, Save, Mail, Edit2, Check, X, Phone } = lucide;
+
+        function DentalBillingSystem() {
+            const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+            const [invoiceNumber, setInvoiceNumber] = useState('');
+            const [patientName, setPatientName] = useState('');
+            const [patientAge, setPatientAge] = useState('');
+            const [patientPhone, setPatientPhone] = useState('');
+            const [patientLocation, setPatientLocation] = useState('');
+            const [doctorName, setDoctorName] = useState('');
+            const [treatments, setTreatments] = useState([]);
+            const [currentTreatment, setCurrentTreatment] = useState('');
+            const [customDescription, setCustomDescription] = useState('');
+            const [currentPrice, setCurrentPrice] = useState('');
+            const [discount, setDiscount] = useState('0');
+            const [tax, setTax] = useState('18');
+            const [editingTreatment, setEditingTreatment] = useState(null);
+            const [editValues, setEditValues] = useState({ name: '', price: '' });
+            const [saveStatus, setSaveStatus] = useState('');
+            const [showCustomInput, setShowCustomInput] = useState(false);
+
+            const commonTreatments = [
+                'Root Canal Treatment',
+                'Teeth Cleaning/Scaling',
+                'Tooth Extraction',
+                'Dental Filling',
+                'Crown/Cap',
+                'Bridge',
+                'Dental Implant',
+                'Teeth Whitening',
+                'Orthodontic Braces',
+                'Dentures',
+                'Wisdom Tooth Removal',
+                'Gum Treatment',
+                'Veneer',
+                'Consultation Fee',
+                'Custom - Describe Service'
+            ];
+
+            useEffect(() => {
+                const date = new Date(invoiceDate);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const invoiceCount = Math.floor(Math.random() * 1000) + 1;
+                setInvoiceNumber(`ADC-${year}-${month}-${String(invoiceCount).padStart(4, '0')}`);
+            }, [invoiceDate]);
+
+            const handleTreatmentSelect = (value) => {
+                if (value === 'Custom - Describe Service') {
+                    setShowCustomInput(true);
+                    setCurrentTreatment('');
+                } else {
+                    setShowCustomInput(false);
+                    setCurrentTreatment(value);
+                    setCustomDescription('');
+                }
+            };
+
+            const addTreatment = () => {
+                const treatmentName = showCustomInput ? customDescription : currentTreatment;
+                if (treatmentName && currentPrice) {
+                    setTreatments([...treatments, {
+                        id: Date.now(),
+                        name: treatmentName,
+                        price: parseFloat(currentPrice)
+                    }]);
+                    setCurrentTreatment('');
+                    setCustomDescription('');
+                    setCurrentPrice('');
+                    setShowCustomInput(false);
+                }
+            };
+
+            const startEdit = (treatment) => {
+                setEditingTreatment(treatment.id);
+                setEditValues({ name: treatment.name, price: treatment.price.toString() });
+            };
+
+            const saveEdit = (id) => {
+                if (editValues.name && editValues.price) {
+                    setTreatments(treatments.map(t => 
+                        t.id === id ? { ...t, name: editValues.name, price: parseFloat(editValues.price) } : t
+                    ));
+                    setEditingTreatment(null);
+                }
+            };
+
+            const cancelEdit = () => {
+                setEditingTreatment(null);
+                setEditValues({ name: '', price: '' });
+            };
+
+            const removeTreatment = (id) => {
+                setTreatments(treatments.filter(t => t.id !== id));
+            };
+
+            const calculateSubtotal = () => {
+                return treatments.reduce((sum, treatment) => sum + treatment.price, 0);
+            };
+
+            const calculateDiscount = () => {
+                return (calculateSubtotal() * parseFloat(discount || 0)) / 100;
+            };
+
+            const calculateTax = () => {
+                const afterDiscount = calculateSubtotal() - calculateDiscount();
+                return (afterDiscount * parseFloat(tax || 0)) / 100;
+            };
+
+            const calculateTotal = () => {
+                return calculateSubtotal() - calculateDiscount() + calculateTax();
+            };
+
+            const handlePrint = () => {
+                window.print();
+            };
+
+            const handleSave = async () => {
+                setSaveStatus('saving');
+                setTimeout(() => {
+                    setSaveStatus('saved');
+                    setTimeout(() => setSaveStatus(''), 2000);
+                }, 1000);
+            };
+
+            const handleSendEmail = async () => {
+                setSaveStatus('sending');
+                setTimeout(() => {
+                    setSaveStatus('sent');
+                    setTimeout(() => setSaveStatus(''), 2000);
+                }, 1500);
+            };
+
+            const clearForm = () => {
+                setPatientName('');
+                setPatientAge('');
+                setPatientPhone('');
+                setPatientLocation('');
+                setDoctorName('');
+                setTreatments([]);
+                setCurrentTreatment('');
+                setCustomDescription('');
+                setCurrentPrice('');
+                setDiscount('0');
+                setTax('18');
+                setShowCustomInput(false);
+                setInvoiceDate(new Date().toISOString().split('T')[0]);
+            };
+
+            const Icon = ({ icon: IconComponent, ...props }) => {
+                useEffect(() => {
+                    lucide.createIcons();
+                }, []);
+                return React.createElement('i', { 'data-lucide': IconComponent, ...props });
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 p-4 md:p-8">
+                    <div className="max-w-5xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 print:shadow-none">
+                            <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                                <div className="flex items-start gap-4 flex-1">
+                                    <img 
+                                        src="https://i.postimg.cc/MG6YHXL0/image.png" 
+                                        alt="Ardra Dental Clinic Logo" 
+                                        className="w-24 h-24 object-contain"
+                                    />
+                                    <div>
+                                        <h1 className="text-3xl font-bold text-purple-800 mb-2">ARDRA DENTAL CLINIC</h1>
+                                        <p className="text-gray-600 mb-1">www.ardradentalclinics.com</p>
+                                        <div className="flex flex-col gap-1 text-gray-600 text-sm">
+                                            <p className="leading-relaxed">Metro Pillar No:A835, Opp Ashoka One Mall, 2nd Floor,<br />
+                                            above Ola & BornBabies, Kukatpally, Hyderabad, Telangana 500072</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Icon icon="phone" className="w-4 h-4" />
+                                                <span>9059046833, 9032376833</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="text-left md:text-right">
+                                    <div className="text-sm font-semibold text-gray-700 mb-2">Invoice Number</div>
+                                    <input
+                                        type="text"
+                                        value={invoiceNumber}
+                                        onChange={(e) => setInvoiceNumber(e.target.value)}
+                                        className="px-3 py-1 border border-gray-300 rounded text-sm font-mono print:border-none"
+                                    />
+                                    <div className="flex items-center gap-2 mt-3">
+                                        <Icon icon="calendar" className="w-4 h-4 text-gray-500" />
+                                        <input
+                                            type="date"
+                                            value={invoiceDate}
+                                            onChange={(e) => setInvoiceDate(e.target.value)}
+                                            className="px-3 py-1 border border-gray-300 rounded text-sm print:border-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 print:shadow-none">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Patient & Doctor Information</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Patient Name *</label>
+                                    <input
+                                        type="text"
+                                        value={patientName}
+                                        onChange={(e) => setPatientName(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent print:border-none"
+                                        placeholder="Enter patient name"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Age *</label>
+                                    <input
+                                        type="number"
+                                        value={patientAge}
+                                        onChange={(e) => setPatientAge(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent print:border-none"
+                                        placeholder="Age"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                    <input
+                                        type="tel"
+                                        value={patientPhone}
+                                        onChange={(e) => setPatientPhone(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent print:border-none"
+                                        placeholder="Phone"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Patient Location</label>
+                                    <input
+                                        type="text"
+                                        value={patientLocation}
+                                        onChange={(e) => setPatientLocation(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent print:border-none"
+                                        placeholder="Location"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Treated By Dr. *</label>
+                                    <input
+                                        type="text"
+                                        value={doctorName}
+                                        onChange={(e) => setDoctorName(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent print:border-none"
+                                        placeholder="Doctor name"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 print:shadow-none">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Treatment Details</h2>
+                            
+                            <div className="grid grid-cols-1 gap-4 mb-4 print:hidden">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Treatment</label>
+                                    <select
+                                        value={showCustomInput ? 'Custom - Describe Service' : currentTreatment}
+                                        onChange={(e) => handleTreatmentSelect(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <option value="">-- Select Treatment --</option>
+                                        {commonTreatments.map((treatment, idx) => (
+                                            <option key={idx} value={treatment}>{treatment}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {showCustomInput && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Describe Custom Service</label>
+                                        <textarea
+                                            value={customDescription}
+                                            onChange={(e) => setCustomDescription(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="Enter detailed description of the service provided..."
+                                            rows="3"
+                                        />
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹)</label>
+                                    <input
+                                        type="number"
+                                        value={currentPrice}
+                                        onChange={(e) => setCurrentPrice(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Enter price"
+                                        onKeyPress={(e) => e.key === 'Enter' && addTreatment()}
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={addTreatment}
+                                disabled={(!currentTreatment && !customDescription) || !currentPrice}
+                                className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mb-6 print:hidden disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                <Icon icon="plus" className="w-4 h-4" />
+                                Add Treatment
+                            </button>
+
+                            {treatments.length > 0 && (
+                                <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Treatment/Service</th>
+                                                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Price (₹)</th>
+                                                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 print:hidden">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200">
+                                            {treatments.map((treatment) => (
+                                                <tr key={treatment.id} className="hover:bg-gray-50">
+                                                    {editingTreatment === treatment.id ? (
+                                                        <>
+                                                            <td className="px-4 py-3">
+                                                                <textarea
+                                                                    value={editValues.name}
+                                                                    onChange={(e) => setEditValues({...editValues, name: e.target.value})}
+                                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                                    rows="2"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <input
+                                                                    type="number"
+                                                                    value={editValues.price}
+                                                                    onChange={(e) => setEditValues({...editValues, price: e.target.value})}
+                                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3 text-center print:hidden">
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <button onClick={() => saveEdit(treatment.id)} className="text-green-600 hover:text-green-800">
+                                                                        <Icon icon="check" className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button onClick={cancelEdit} className="text-gray-600 hover:text-gray-800">
+                                                                        <Icon icon="x" className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <td className="px-4 py-3 text-sm text-gray-800">{treatment.name}</td>
+                                                            <td className="px-4 py-3 text-sm text-gray-800 text-right">{treatment.price.toFixed(2)}</td>
+                                                            <td className="px-4 py-3 text-center print:hidden">
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <button onClick={() => startEdit(treatment)} className="text-blue-600 hover:text-blue-800">
+                                                                        <Icon icon="edit-2" className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button onClick={() => removeTreatment(treatment.id)} className="text-red-600 hover:text-red-800">
+                                                                        <Icon icon="trash-2" className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {treatments.length > 0 && (
+                                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-6 border-2 border-blue-200">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Professional Invoice Summary</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center pb-2">
+                                            <span className="text-gray-700 font-medium">Subtotal:</span>
+                                            <span className="font-semibold text-lg">₹ {calculateSubtotal().toFixed(2)}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center border-t pt-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-gray-700 font-medium">Discount:</span>
+                                                <input
+                                                    type="number"
+                                                    value={discount}
+                                                    onChange={(e) => setDiscount(e.target.value)}
+                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm print:border-none"
+                                                    min="0"
+                                                    max="100"
+                                                />
+                                                <span className="text-sm text-gray-600">%</span>
+                                            </div>
+                                            <span className="font-semibold text-red-600">- ₹ {calculateDiscount().toFixed(2)}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pb-2">
+                                            <span className="text-gray-700">Amount after Discount:</span>
+                                            <span className="font-semibold">₹ {(calculateSubtotal() - calculateDiscount()).toFixed(2)}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center border-t pt-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-gray-700 font-medium">Tax (GST):</span>
+                                                <input
+                                                    type="number"
+                                                    value={tax}
+                                                    onChange={(e) => setTax(e.target.value)}
+                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm print:border-none"
+                                                    min="0"
+                                                    max="100"
+                                                />
+                                                <span className="text-sm text-gray-600">%</span>
+                                            </div>
+                                            <span className="font-semibold text-green-600">+ ₹ {calculateTax().toFixed(2)}</span>
+                                        </div>
+
+                                        <div className="border-t-2 border-blue-400 pt-3 flex justify-between items-center bg-white rounded-lg p-3 mt-3">
+                                            <span className="text-xl font-bold text-gray-900">Total Amount Payable:</span>
+                                            <span className="text-3xl font-bold text-purple-800">₹ {calculateTotal().toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {doctorName && treatments.length > 0 && (
+                            <div className="bg-white rounded-lg shadow-lg p-6 mb-6 print:shadow-none">
+                                <div className="flex justify-between items-center">
+                                    <div className="text-left">
+                                        <p className="text-gray-700 text-sm mb-1">Authorized Signature</p>
+                                        <p className="font-bold text-purple-800 text-lg" style={{fontFamily: 'cursive'}}>
+                                            Ardra Dental Clinic
+                                        </p>
+                                        <p className="text-gray-600 text-sm mt-1">
+                                            <span className="font-semibold">Treated by:</span> Dr. {doctorName}
+                                        </p>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="text-6xl font-bold text-green-500 opacity-20 transform -rotate-12 border-4 border-green-500 px-6 py-2 rounded-lg">
+                                            PAID
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 print:hidden">
+                            <button
+                                onClick={handlePrint}
+                                disabled={!patientName || !patientAge || !doctorName || treatments.length === 0}
+                                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                <Icon icon="printer" className="w-5 h-5" />
+                                Print
+                            </button>
+                            
+                            <button
+                                onClick={handleSave}
+                                disabled={!patientName || !patientAge || !doctorName || treatments.length === 0}
+                                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                <Icon icon="save" className="w-5 h-5" />
+                                {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
+                            </button>
+
+                            <button
+                                onClick={handleSendEmail}
+                                disabled={!patientName || !patientAge || !doctorName || treatments.length === 0}
+                                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                <Icon icon="mail" className="w-5 h-5" />
+                                {saveStatus === 'sending' ? 'Sending...' : saveStatus === 'sent' ? 'Sent!' : 'Send Email'}
+                            </button>
+
+                            <button
+                                onClick={clearForm}
+                                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                            >
+                                Clear All
+                            </button>
+                        </div>
+
+                        {saveStatus && (
+                            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center print:hidden">
+                                {saveStatus === 'saved' && <p className="text-green-700 font-semibold">✓ Invoice saved successfully!</p>}
+                                {saveStatus === 'sent' && <p className="text-green-700 font-semibold">✓ Invoice sent to ardradentalclinc@gmail.com</p>}
+                            </div>
+                        )}
+
+                        <div className="hidden print:block mt-8 pt-4 border-t border-gray-300 text-center text-sm text-gray-600">
+                            <p className="font-semibold text-lg text-purple-800 mb-2">Thank you for choosing ARDRA DENTAL CLINIC</p>
+                            <p className="text-xs leading-relaxed mb-2">Metro Pillar No:A835, Opp Ashoka One Mall, 2nd Floor, above Ola & BornBabies,<br />Kukatpally, Hyderabad, Telangana 500072</p>
+                            <p>www.ardradentalclinics.com | Email: ardradentalclinc@gmail.com</p>
+                            <p className="mt-1">Contact: 9059046833, 9032376833</p>
+                        </div>
+                    </div>
+
+                    <style>{`
+                        @media print {
+                            body {
+                                background: white;
+                            }
+                            .print\\:hidden {
+                                display: none !important;
+                            }
+                            .print\\:block {
+                                display: block !important;
+                            }
+                            .print\\:shadow-none {
+                                box-shadow: none !important;
+                            }
+                            .print\\:border-none {
+                                border: none !important;
+                            }
+                            input, textarea, select {
+                                border: none !important;
+                                background: transparent !important;
+                            }
+                        }
+                    `}</style>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<DentalBillingSystem />, document.getElementById('root'));
+    </script>
+</body>
+</html>
