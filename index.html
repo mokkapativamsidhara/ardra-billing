@@ -33,6 +33,24 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        @media print {
+            body {
+                background: white;
+            }
+            input, textarea, select {
+                border: none !important;
+                background: transparent !important;
+            }
+            button {
+                display: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-border {
+                border: 1px solid #e5e7eb !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -74,15 +92,17 @@
             const [patientAge, setPatientAge] = useState('');
             const [patientPhone, setPatientPhone] = useState('');
             const [patientLocation, setPatientLocation] = useState('');
+            const [clinicalAssessment, setClinicalAssessment] = useState('');
             const [doctorName, setDoctorName] = useState('');
             const [treatments, setTreatments] = useState([]);
             const [currentTreatment, setCurrentTreatment] = useState('');
             const [customDescription, setCustomDescription] = useState('');
+            const [treatmentPlan, setTreatmentPlan] = useState('');
             const [currentPrice, setCurrentPrice] = useState('');
             const [discount, setDiscount] = useState('0');
             const [tax, setTax] = useState('18');
             const [editingTreatment, setEditingTreatment] = useState(null);
-            const [editValues, setEditValues] = useState({ name: '', price: '' });
+            const [editValues, setEditValues] = useState({ name: '', price: '', plan: '' });
             const [saveStatus, setSaveStatus] = useState('');
             const [showCustomInput, setShowCustomInput] = useState(false);
 
@@ -129,10 +149,12 @@
                     setTreatments([...treatments, {
                         id: Date.now(),
                         name: treatmentName,
-                        price: parseFloat(currentPrice)
+                        price: parseFloat(currentPrice),
+                        plan: treatmentPlan
                     }]);
                     setCurrentTreatment('');
                     setCustomDescription('');
+                    setTreatmentPlan('');
                     setCurrentPrice('');
                     setShowCustomInput(false);
                 }
@@ -140,13 +162,13 @@
 
             const startEdit = (treatment) => {
                 setEditingTreatment(treatment.id);
-                setEditValues({ name: treatment.name, price: treatment.price.toString() });
+                setEditValues({ name: treatment.name, price: treatment.price.toString(), plan: treatment.plan || '' });
             };
 
             const saveEdit = (id) => {
                 if (editValues.name && editValues.price) {
                     setTreatments(treatments.map(t => 
-                        t.id === id ? { ...t, name: editValues.name, price: parseFloat(editValues.price) } : t
+                        t.id === id ? { ...t, name: editValues.name, price: parseFloat(editValues.price), plan: editValues.plan } : t
                     ));
                     setEditingTreatment(null);
                 }
@@ -154,7 +176,7 @@
 
             const cancelEdit = () => {
                 setEditingTreatment(null);
-                setEditValues({ name: '', price: '' });
+                setEditValues({ name: '', price: '', plan: '' });
             };
 
             const removeTreatment = (id) => {
@@ -203,10 +225,12 @@
                 setPatientAge('');
                 setPatientPhone('');
                 setPatientLocation('');
+                setClinicalAssessment('');
                 setDoctorName('');
                 setTreatments([]);
                 setCurrentTreatment('');
                 setCustomDescription('');
+                setTreatmentPlan('');
                 setCurrentPrice('');
                 setDiscount('0');
                 setTax('18');
@@ -217,24 +241,21 @@
             return (
                 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 p-4 md:p-8">
                     <div className="max-w-5xl mx-auto">
+                        {/* Header */}
                         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                                 <div className="flex items-start gap-4 flex-1">
                                     <img 
-                                        src="https://i.imgur.com/8KJQZxY.png" 
+                                        src="https://raw.githubusercontent.com/mokkapativamsidhara/ardra-billing/main/logo.png" 
                                         alt="Ardra Dental Clinic Logo" 
                                         className="w-32 h-32 object-contain"
                                     />
                                     <div>
                                         <h1 className="text-3xl font-bold text-purple-800 mb-2">ARDRA DENTAL CLINIC</h1>
                                         <p className="text-gray-600 mb-1">www.ardradentalclinics.com</p>
-                                        <div className="flex flex-col gap-1 text-gray-600 text-sm">
-                                            <p className="leading-relaxed">Metro Pillar No:A835, Opp Ashoka One Mall, 2nd Floor,<br />
-                                            above Ola & BornBabies, Kukatpally, Hyderabad, Telangana 500072</p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Icon name="phone" className="w-4 h-4" />
-                                                <span>9059046833, 9032376833</span>
-                                            </div>
+                                        <div className="flex items-center gap-2 mt-1 text-gray-600 text-sm">
+                                            <Icon name="phone" className="w-4 h-4" />
+                                            <span>9059046833, 9032376833</span>
                                         </div>
                                     </div>
                                 </div>
@@ -259,9 +280,10 @@
                             </div>
                         </div>
 
+                        {/* Patient Information */}
                         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Patient & Doctor Information</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Patient Information</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Patient Name *</label>
                                     <input
@@ -302,6 +324,23 @@
                                         placeholder="Location"
                                     />
                                 </div>
+                            </div>
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Clinical Assessment of the Patient's Condition</label>
+                                <textarea
+                                    value={clinicalAssessment}
+                                    onChange={(e) => setClinicalAssessment(e.target.value)}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Enter clinical assessment and patient's condition..."
+                                    rows="4"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Doctor Information */}
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Doctor Information</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Treated By Dr. *</label>
                                     <input
@@ -315,10 +354,11 @@
                             </div>
                         </div>
 
+                        {/* Treatment Details */}
                         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                             <h2 className="text-xl font-semibold text-gray-800 mb-4">Treatment Details</h2>
                             
-                            <div className="grid grid-cols-1 gap-4 mb-4">
+                            <div className="grid grid-cols-1 gap-4 mb-4 no-print">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Select Treatment</label>
                                     <select
@@ -347,6 +387,17 @@
                                 )}
 
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Treatment Plan & Follow-up</label>
+                                    <textarea
+                                        value={treatmentPlan}
+                                        onChange={(e) => setTreatmentPlan(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Describe the complete treatment plan and follow-up instructions..."
+                                        rows="4"
+                                    />
+                                </div>
+
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹)</label>
                                     <input
                                         type="number"
@@ -362,20 +413,21 @@
                             <button
                                 onClick={addTreatment}
                                 disabled={(!currentTreatment && !customDescription) || !currentPrice}
-                                className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mb-6 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mb-6 disabled:bg-gray-400 disabled:cursor-not-allowed no-print"
                             >
                                 <Icon name="plus" />
                                 Add Treatment
                             </button>
 
                             {treatments.length > 0 && (
-                                <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
+                                <div className="border border-gray-200 rounded-lg overflow-hidden mb-6 print-border">
                                     <table className="w-full">
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Treatment/Service</th>
+                                                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Treatment Plan</th>
                                                 <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Price (₹)</th>
-                                                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Actions</th>
+                                                <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 no-print">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200">
@@ -392,6 +444,14 @@
                                                                 />
                                                             </td>
                                                             <td className="px-4 py-3">
+                                                                <textarea
+                                                                    value={editValues.plan}
+                                                                    onChange={(e) => setEditValues({...editValues, plan: e.target.value})}
+                                                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                                                    rows="2"
+                                                                />
+                                                            </td>
+                                                            <td className="px-4 py-3">
                                                                 <input
                                                                     type="number"
                                                                     value={editValues.price}
@@ -399,7 +459,7 @@
                                                                     className="w-full px-2 py-1 border border-gray-300 rounded text-sm text-right"
                                                                 />
                                                             </td>
-                                                            <td className="px-4 py-3 text-center">
+                                                            <td className="px-4 py-3 text-center no-print">
                                                                 <div className="flex items-center justify-center gap-2">
                                                                     <button onClick={() => saveEdit(treatment.id)} className="text-green-600 hover:text-green-800">
                                                                         <Icon name="check" className="w-4 h-4" />
@@ -413,8 +473,9 @@
                                                     ) : (
                                                         <>
                                                             <td className="px-4 py-3 text-sm text-gray-800">{treatment.name}</td>
+                                                            <td className="px-4 py-3 text-sm text-gray-600">{treatment.plan || '-'}</td>
                                                             <td className="px-4 py-3 text-sm text-gray-800 text-right">{treatment.price.toFixed(2)}</td>
-                                                            <td className="px-4 py-3 text-center">
+                                                            <td className="px-4 py-3 text-center no-print">
                                                                 <div className="flex items-center justify-center gap-2">
                                                                     <button onClick={() => startEdit(treatment)} className="text-blue-600 hover:text-blue-800">
                                                                         <Icon name="edit" className="w-4 h-4" />
@@ -435,34 +496,13 @@
 
                             {treatments.length > 0 && (
                                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-6 border-2 border-blue-200">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Professional Invoice Summary</h3>
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Invoice Summary</h3>
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center pb-2">
                                             <span className="text-gray-700 font-medium">Subtotal:</span>
                                             <span className="font-semibold text-lg">₹ {calculateSubtotal().toFixed(2)}</span>
                                         </div>
                                         
-                                        <div className="flex justify-between items-center border-t pt-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-gray-700 font-medium">Discount:</span>
-                                                <input
-                                                    type="number"
-                                                    value={discount}
-                                                    onChange={(e) => setDiscount(e.target.value)}
-                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                                                    min="0"
-                                                    max="100"
-                                                />
-                                                <span className="text-sm text-gray-600">%</span>
-                                            </div>
-                                            <span className="font-semibold text-red-600">- ₹ {calculateDiscount().toFixed(2)}</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-center pb-2">
-                                            <span className="text-gray-700">Amount after Discount:</span>
-                                            <span className="font-semibold">₹ {(calculateSubtotal() - calculateDiscount()).toFixed(2)}</span>
-                                        </div>
-
                                         <div className="flex justify-between items-center border-t pt-2">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-gray-700 font-medium">Tax (GST):</span>
@@ -488,6 +528,7 @@
                             )}
                         </div>
 
+                        {/* Signature Section */}
                         {doctorName && treatments.length > 0 && (
                             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                                 <div className="flex justify-between items-center">
@@ -495,9 +536,6 @@
                                         <p className="text-gray-700 text-sm mb-1">Authorized Signature</p>
                                         <p className="font-bold text-purple-800 text-lg" style={{fontFamily: 'cursive'}}>
                                             Ardra Dental Clinic
-                                        </p>
-                                        <p className="text-gray-600 text-sm mt-1">
-                                            <span className="font-semibold">Treated by:</span> Dr. {doctorName}
                                         </p>
                                     </div>
                                     <div className="relative">
@@ -509,7 +547,8 @@
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 no-print">
                             <button
                                 onClick={handlePrint}
                                 disabled={!patientName || !patientAge || !doctorName || treatments.length === 0}
@@ -545,13 +584,15 @@
                             </button>
                         </div>
 
+                        {/* Status Messages */}
                         {saveStatus && (
-                            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center no-print">
                                 {saveStatus === 'saved' && <p className="text-green-700 font-semibold">✓ Invoice saved successfully!</p>}
                                 {saveStatus === 'sent' && <p className="text-green-700 font-semibold">✓ Invoice sent to ardradentalclinc@gmail.com</p>}
                             </div>
                         )}
 
+                        {/* Footer */}
                         <div className="mt-8 pt-4 border-t border-gray-300 text-center text-sm text-gray-600">
                             <p className="font-semibold text-lg text-purple-800 mb-2">Thank you for choosing ARDRA DENTAL CLINIC</p>
                             <p className="text-xs leading-relaxed mb-2">Metro Pillar No:A835, Opp Ashoka One Mall, 2nd Floor, above Ola & BornBabies,<br />Kukatpally, Hyderabad, Telangana 500072</p>
@@ -559,21 +600,6 @@
                             <p className="mt-1">Contact: 9059046833, 9032376833</p>
                         </div>
                     </div>
-
-                    <style>{`
-                        @media print {
-                            body {
-                                background: white;
-                            }
-                            input, textarea, select {
-                                border: none !important;
-                                background: transparent !important;
-                            }
-                            button {
-                                display: none !important;
-                            }
-                        }
-                    `}</style>
                 </div>
             );
         }
@@ -582,4 +608,24 @@
         root.render(<DentalBillingSystem />);
     </script>
 </body>
-</html>
+</html><div className="flex items-center gap-2">
+                                                <span className="text-gray-700 font-medium">Discount:</span>
+                                                <input
+                                                    type="number"
+                                                    value={discount}
+                                                    onChange={(e) => setDiscount(e.target.value)}
+                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                                                    min="0"
+                                                    max="100"
+                                                />
+                                                <span className="text-sm text-gray-600">%</span>
+                                            </div>
+                                            <span className="font-semibold text-red-600">- ₹ {calculateDiscount().toFixed(2)}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pb-2">
+                                            <span className="text-gray-700">Amount after Discount:</span>
+                                            <span className="font-semibold">₹ {(calculateSubtotal() - calculateDiscount()).toFixed(2)}</span>
+                                        </div>
+
+                                        <div className="flex justify-between items-center border-t pt-2">
